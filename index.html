@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Aforo IoT</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AI</div>
+        <div>
+          <strong>Aforo IoT</strong>
+          <span>Centro de monitoreo</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Panel principal">
+        <a class="nav-item active" href="#dashboard">Monitor</a>
+        <a class="nav-item" href="#historial">Historial</a>
+        <a class="nav-item" href="#flujo">Flujo</a>
+      </nav>
+
+      <div class="sensor-box">
+        <span class="pulse-dot"></span>
+        <div>
+          <strong>Sensor activo</strong>
+          <small id="sensorStatus">Arduino sin conectar</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Dashboard en tiempo real</p>
+          <h1>Control inteligente de aforo</h1>
+        </div>
+        <div class="clock-card">
+          <span id="currentDate">--</span>
+          <strong id="currentTime">--:--:--</strong>
+        </div>
+      </header>
+
+      <section id="dashboard" class="metrics-grid" aria-label="Indicadores de aforo">
+        <article class="metric-card">
+          <span class="metric-label">Aforo máximo permitido</span>
+          <strong id="maxCapacity">30</strong>
+          <small>Personas autorizadas</small>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-label">Personas detectadas</span>
+          <strong id="totalDetected">0</strong>
+          <small>Eventos del sensor</small>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-label">Personas dentro actualmente</span>
+          <strong id="currentInside">0</strong>
+          <small>Conteo estimado en vivo</small>
+        </article>
+
+        <article id="statusCard" class="metric-card status-card allowed">
+          <span class="metric-label">Estado del acceso</span>
+          <strong id="accessStatus">ACCESO PERMITIDO</strong>
+          <small id="statusHint">Ingreso habilitado</small>
+        </article>
+      </section>
+
+      <section class="control-layout">
+        <article class="monitor-card live-camera">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Sensor de puerta</p>
+              <h2>Zona de detección</h2>
+            </div>
+            <span id="liveBadge" class="live-badge allowed">ONLINE</span>
+          </div>
+
+          <div class="camera-frame">
+            <div class="scan-line"></div>
+            <div class="door-outline">
+              <span class="camera-lens"></span>
+              <span class="person-dot dot-one"></span>
+              <span class="person-dot dot-two"></span>
+              <span class="person-dot dot-three"></span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="connectArduino" type="button">Conectar Arduino</button>
+            <button id="addPerson" type="button">Simular ingreso de persona</button>
+            <button id="removePerson" type="button">Simular salida de persona</button>
+            <button id="resetCounter" type="button" class="secondary">Reiniciar contador</button>
+          </div>
+        </article>
+
+        <article id="alertPanel" class="monitor-card status-panel allowed">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Control automático</p>
+              <h2>Estado operativo</h2>
+            </div>
+          </div>
+          <div class="status-ring">
+            <span id="statusIndicator"></span>
+            <strong id="statusText">PERMITIDO</strong>
+          </div>
+          <p id="statusMessage">
+            El conteo se mantiene dentro del límite configurado. La puerta puede permitir ingresos.
+          </p>
+        </article>
+      </section>
+
+      <section id="flujo" class="monitor-card chart-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Flujo por hora</p>
+            <h2>Personas detectadas</h2>
+          </div>
+          <span class="capacity-chip">Límite: 30</span>
+        </div>
+        <canvas id="flowChart" width="980" height="300" aria-label="Gráfico de flujo de personas por hora"></canvas>
+      </section>
+
+      <section id="historial" class="monitor-card table-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Registro anónimo</p>
+            <h2>Historial tipo Excel</h2>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Personas detectadas</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
