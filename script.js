@@ -81,6 +81,15 @@ function applyArduinoState(data) {
   updateDashboard();
 }
 
+function extractFallback(raw) {
+  const td = raw.match(/"totalDetected"\s*:\s*(\d+)/);
+  const ci = raw.match(/"currentInside"\s*:\s*(\d+)/);
+  if (td && ci) {
+    return { totalDetected: Number(td[1]), currentInside: Number(ci[1]) };
+  }
+  return null;
+}
+
 function handleSerialLine(line) {
   const cleanLine = line.trim();
 
@@ -88,10 +97,28 @@ function handleSerialLine(line) {
     return;
   }
 
+  console.log("[Serial RX]", cleanLine);
+
+  let data = null;
   try {
-    applyArduinoState(JSON.parse(cleanLine));
-  } catch (error) {
-    console.warn("Dato Serial no reconocido:", cleanLine);
+    data = JSON.parse(cleanLine);
+  } catch (_) {
+    data = extractFallback(cleanLine);
+    if (!data) {
+      console.warn("Dato Serial no reconocido:", cleanLine);
+      return;
+    }
+  }
+
+  console.log("[Estado recibido]", data);
+  updateSensorTimestamp();
+  applyArduinoState(data);
+}
+
+function updateSensorTimestamp() {
+  const el = document.getElementById("lastSensorUpdate");
+  if (el) {
+    el.textContent = "Último dato: " + new Date().toLocaleTimeString("es-PE", { hour12: false });
   }
 }
 
