@@ -1,144 +1,215 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include <Servo.h>
 
-const int TRIG_PIN = 9;
-const int ECHO_PIN = 10;
-const int SERVO_PIN = 6;
-const int LED_GREEN = 4;
-const int LED_RED = 5;
-const int BUZZER_PIN = 3;
-const int EXIT_BUTTON_PIN = 7;
+// -------- PINES --------
+#define TRIG 7
+#define ECHO 6
+#define BUZZER 13
+#define LED_VERDE 3
+#define LED_ROJO 2
+#define SERVO_PIN 10
 
-const int MAX_CAPACITY = 30;
-const int DETECT_DISTANCE_CM = 18;
-const unsigned long DETECT_COOLDOWN_MS = 1400;
+// -------- OBJETOS --------
+Servo barrera;
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-Servo barrier;
+// -------- CONFIG --------
+const int AFORO_MAXIMO = 5;
+const int DISTANCIA_DETECCION = 20;
+const int DISTANCIA_LIBERACION = 30;
 
-int totalDetected = 0;
-int currentInside = 0;
-bool objectWasNear = false;
-unsigned long lastDetectionMs = 0;
+// -------- VARIABLES --------
+int totalDetectados = 0;
+int aforoActual = 0;
 
-void setup() {
+bool personaDetectada = false;
+
+// Anti-rebote
+unsigned long lastDetection = 0;
+const int cooldown = 1500;
+
+// -------- FUNCIONES --------
+
+long medirDistancia()
+{
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long duracion = pulseIn(ECHO, HIGH, 30000);
+
+  if (duracion == 0)
+    return 999;
+
+  return duracion * 0.034 / 2;
+}
+
+void mostrarLCD(const char *mensaje)
+{
+  lcd.clear();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Aforo:");
+  lcd.print(aforoActual);
+  lcd.print("/");
+  lcd.print(AFORO_MAXIMO);
+
+  lcd.setCursor(0, 1);
+  lcd.print(mensaje);
+}
+
+void abrirBarrera()
+{
+  barrera.write(90);
+  delay(800);
+  barrera.write(0);
+}
+
+void enviarJSON()
+{
+  Serial.print("{\"totalDetected\":");
+  Serial.print(totalDetectados);
+  Serial.print(",\"currentInside\":");
+  Serial.print(aforoActual);
+  Serial.println("}");
+}
+
+void procesarComandos()
+{
+  if (Serial.available())
+  {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+
+    if (cmd == "IN")
+    {
+      totalDetectados++;
+      aforoActual++;
+      actualizarEstado();
+      mostrarLCD("INGRESO WEB");
+      enviarJSON();
+    }
+    else if (cmd == "OUT")
+    {
+      aforoActual = max(0, aforoActual - 1);
+      actualizarEstado();
+      mostrarLCD("SALIDA WEB");
+      enviarJSON();
+    }
+    else if (cmd == "RESET")
+    {
+      totalDetectados = 0;
+      aforoActual = 0;
+      actualizarEstado();
+      mostrarLCD("REINICIADO");
+      enviarJSON();
+    }
+  }
+}
+
+void actualizarEstado()
+{
+  if (aforoActual < AFORO_MAXIMO)
+  {
+    digitalWrite(LED_VERDE, HIGH);
+    digitalWrite(LED_ROJO, LOW);
+  }
+  else
+  {
+    digitalWrite(LED_VERDE, LOW);
+    digitalWrite(LED_ROJO, HIGH);
+  }
+}
+
+// -------- SETUP --------
+
+void setup()
+{
   Serial.begin(9600);
 
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(EXIT_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
 
-  barrier.attach(SERVO_PIN);
-  updateOutputs();
-  sendState("READY");
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(LED_ROJO, OUTPUT);
+
+  barrera.attach(SERVO_PIN);
+  barrera.write(0);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Sistema Aforo");
+  lcd.setCursor(0, 1);
+  lcd.print("Iniciando...");
+  delay(1200);
+
+  mostrarLCD("Modo: ENTRADA");
+
+  actualizarEstado();
+
+  enviarJSON();
 }
 
-void loop() {
-  handleSerialCommands();
-  handleUltrasonicEntry();
-  handleExitButton();
-}
+// -------- LOOP --------
 
-void handleUltrasonicEntry() {
-  long distance = readDistanceCm();
-  bool objectIsNear = distance > 0 && distance <= DETECT_DISTANCE_CM;
-  unsigned long now = millis();
+void loop()
+{
+  procesarComandos();
 
-  if (objectIsNear && !objectWasNear && now - lastDetectionMs > DETECT_COOLDOWN_MS) {
-    lastDetectionMs = now;
-    totalDetected += 1;
+  long distancia = medirDistancia();
 
-    if (currentInside < MAX_CAPACITY) {
-      currentInside += 1;
-      sendState("IN");
-    } else {
-      tone(BUZZER_PIN, 1200, 350);
-      sendState("BLOCKED");
+  // -------- DETECCION --------
+  if (distancia <= DISTANCIA_DETECCION &&
+      !personaDetectada &&
+      millis() - lastDetection > cooldown)
+  {
+
+    personaDetectada = true;
+    lastDetection = millis();
+
+    if (aforoActual < AFORO_MAXIMO)
+    {
+      totalDetectados++;
+      aforoActual++;
+
+      mostrarLCD("INGRESO OK");
+      tone(BUZZER, 1200, 150);
+
+      abrirBarrera();
+    }
+    else
+    {
+      mostrarLCD("AFORO LLENO");
+      tone(BUZZER, 500, 400);
     }
 
-    updateOutputs();
+    actualizarEstado();
   }
 
-  objectWasNear = objectIsNear;
-}
+  // -------- LIBERACION --------
+  if (distancia >= DISTANCIA_LIBERACION)
+  {
+    personaDetectada = false;
 
-void handleExitButton() {
-  static bool lastButtonState = HIGH;
-  bool buttonState = digitalRead(EXIT_BUTTON_PIN);
-
-  if (lastButtonState == HIGH && buttonState == LOW) {
-    currentInside = max(0, currentInside - 1);
-    updateOutputs();
-    sendState("OUT");
-    delay(220);
+    if (aforoActual < AFORO_MAXIMO)
+    {
+      mostrarLCD("Modo: ENTRADA");
+    }
+    else
+    {
+      mostrarLCD("AFORO LLENO");
+    }
   }
 
-  lastButtonState = buttonState;
-}
+  // -------- ENVIO A WEB --------
+  enviarJSON();
 
-void handleSerialCommands() {
-  if (!Serial.available()) {
-    return;
-  }
-
-  String command = Serial.readStringUntil('\n');
-  command.trim();
-
-  if (command == "RESET") {
-    totalDetected = 0;
-    currentInside = 0;
-    updateOutputs();
-    sendState("RESET");
-  } else if (command == "OUT") {
-    currentInside = max(0, currentInside - 1);
-    updateOutputs();
-    sendState("OUT");
-  } else if (command == "IN") {
-    totalDetected += 1;
-    currentInside += 1;
-    updateOutputs();
-    sendState("IN");
-  }
-}
-
-long readDistanceCm() {
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-
-  long duration = pulseIn(ECHO_PIN, HIGH, 30000);
-  if (duration == 0) {
-    return -1;
-  }
-
-  return duration * 0.034 / 2;
-}
-
-void updateOutputs() {
-  bool allowed = currentInside < MAX_CAPACITY;
-
-  digitalWrite(LED_GREEN, allowed ? HIGH : LOW);
-  digitalWrite(LED_RED, allowed ? LOW : HIGH);
-  barrier.write(allowed ? 90 : 0);
-
-  if (!allowed) {
-    tone(BUZZER_PIN, 900, 120);
-  }
-}
-
-void sendState(const char *eventName) {
-  Serial.print("{\"event\":\"");
-  Serial.print(eventName);
-  Serial.print("\",\"totalDetected\":");
-  Serial.print(totalDetected);
-  Serial.print(",\"currentInside\":");
-  Serial.print(currentInside);
-  Serial.print(",\"maxCapacity\":");
-  Serial.print(MAX_CAPACITY);
-  Serial.print(",\"access\":\"");
-  Serial.print(currentInside >= MAX_CAPACITY ? "blocked" : "allowed");
-  Serial.println("\"}");
+  delay(200);
 }

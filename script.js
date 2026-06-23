@@ -1,4 +1,4 @@
-const MAX_CAPACITY = 30;
+const MAX_CAPACITY = 5;
 
 let totalDetected = 0;
 let currentInside = 0;
@@ -284,7 +284,7 @@ function drawChart() {
   context.setLineDash([]);
   context.fillStyle = "#ffc857";
   context.font = "12px Arial";
-  context.fillText("Aforo 30", padding, capacityY - 8);
+  context.fillText("Aforo " + MAX_CAPACITY, padding, capacityY - 8);
 
   hourlyData.forEach((item, index) => {
     const slot = chartWidth / hourlyData.length;
