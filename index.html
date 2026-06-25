@@ -6,14 +6,26 @@
   <title>Control de Aforo IoT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="bg-fx" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+    <span class="grid-overlay"></span>
+  </div>
+
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">AI</div>
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+            <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+          </svg>
+        </div>
         <div>
           <strong>Aforo IoT</strong>
           <span>Centro de monitoreo</span>
@@ -21,9 +33,18 @@
       </div>
 
       <nav class="nav-list" aria-label="Panel principal">
-        <a class="nav-item active" href="#dashboard">Monitor</a>
-        <a class="nav-item" href="#historial">Historial</a>
-        <a class="nav-item" href="#flujo">Flujo</a>
+        <a class="nav-item active" href="#dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+          <span>Monitor</span>
+        </a>
+        <a class="nav-item" href="#historial">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 5h18M3 12h18M3 19h18"></path></svg>
+          <span>Historial</span>
+        </a>
+        <a class="nav-item" href="#flujo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 17l6-6 4 4 8-8"></path></svg>
+          <span>Flujo</span>
+        </a>
       </nav>
 
       <div class="sensor-box">
@@ -31,13 +52,13 @@
         <div>
           <strong>Sensor activo</strong>
           <small id="sensorStatus">Arduino sin conectar</small>
-          <small id="lastSensorUpdate" style="opacity:0.6"></small>
+          <small id="lastSensorUpdate"></small>
         </div>
       </div>
     </aside>
 
     <main class="main-panel">
-      <header class="topbar">
+      <header class="topbar" data-aos="fade-down">
         <div>
           <p class="eyebrow">Dashboard en tiempo real</p>
           <h1>Control inteligente de aforo</h1>
@@ -49,25 +70,25 @@
       </header>
 
       <section id="dashboard" class="metrics-grid" aria-label="Indicadores de aforo">
-        <article class="metric-card">
+        <article class="metric-card spotlight" data-aos="fade-up" data-aos-delay="0">
           <span class="metric-label">Aforo máximo permitido</span>
           <strong id="maxCapacity">30</strong>
           <small>Personas autorizadas</small>
         </article>
 
-        <article class="metric-card">
+        <article class="metric-card spotlight" data-aos="fade-up" data-aos-delay="80">
           <span class="metric-label">Personas detectadas</span>
           <strong id="totalDetected">0</strong>
           <small>Eventos del sensor</small>
         </article>
 
-        <article class="metric-card">
+        <article class="metric-card spotlight" data-aos="fade-up" data-aos-delay="160">
           <span class="metric-label">Personas dentro actualmente</span>
           <strong id="currentInside">0</strong>
           <small>Conteo estimado en vivo</small>
         </article>
 
-        <article id="statusCard" class="metric-card status-card allowed">
+        <article id="statusCard" class="metric-card status-card allowed spotlight" data-aos="fade-up" data-aos-delay="240">
           <span class="metric-label">Estado del acceso</span>
           <strong id="accessStatus">ACCESO PERMITIDO</strong>
           <small id="statusHint">Ingreso habilitado</small>
@@ -75,7 +96,7 @@
       </section>
 
       <section class="control-layout">
-        <article class="monitor-card live-camera">
+        <article class="monitor-card live-camera spotlight" data-aos="fade-up">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Sensor de puerta</p>
@@ -102,7 +123,7 @@
           </div>
         </article>
 
-        <article id="alertPanel" class="monitor-card status-panel allowed">
+        <article id="alertPanel" class="monitor-card status-panel allowed spotlight" data-aos="fade-up" data-aos-delay="100">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Control automático</p>
@@ -119,7 +140,7 @@
         </article>
       </section>
 
-      <section id="flujo" class="monitor-card chart-card">
+      <section id="flujo" class="monitor-card chart-card spotlight" data-aos="fade-up">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Flujo por hora</p>
@@ -130,7 +151,7 @@
         <canvas id="flowChart" width="980" height="300" aria-label="Gráfico de flujo de personas por hora"></canvas>
       </section>
 
-      <section id="historial" class="monitor-card table-card">
+      <section id="historial" class="monitor-card table-card spotlight" data-aos="fade-up">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Registro anónimo</p>
@@ -155,5 +176,27 @@
   </div>
 
   <script src="script.js"></script>
+
+  <!-- Mejoras visuales: NO afectan la logica del sensor / Arduino -->
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    // Animaciones de entrada (degrada con elegancia si no hay internet)
+    try {
+      if (window.AOS) {
+        AOS.init({ duration: 650, easing: "ease-out-cubic", once: true, offset: 40 });
+      }
+    } catch (e) { /* sin conexion: el contenido se ve igual */ }
+
+    // Efecto spotlight: la luz sigue el cursor sobre las tarjetas
+    try {
+      document.querySelectorAll(".spotlight").forEach((card) => {
+        card.addEventListener("pointermove", (event) => {
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty("--mx", (event.clientX - rect.left) + "px");
+          card.style.setProperty("--my", (event.clientY - rect.top) + "px");
+        });
+      });
+    } catch (e) { /* no critico */ }
+  </script>
 </body>
 </html>
